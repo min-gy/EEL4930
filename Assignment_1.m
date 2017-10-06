@@ -1,5 +1,9 @@
-%generate pure sin wave
-x = [0:1/8000:2];
-f = sin(2*pi*x);
-plot(x,f);
+format long
+M = 2;
+
+
+for i = 1:M
+   error = train(i);
+   disp(error)
+end
 
