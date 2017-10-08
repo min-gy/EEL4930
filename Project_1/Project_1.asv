@@ -1,0 +1,40 @@
+function project_1()
+
+    d = dlmread('corrupted_speech.txt');
+    fs = dlmread('fs.txt');
+    X = dlmread('music.txt');
+    
+    %define filter order M, step size a, and initialize weights with
+    %randn()
+    M = 50;
+    a = 0.001;
+    %filler = randn(1,M);
+    w = zeros(size(X,1), M);
+    %w(1,:) = filler;
+    Y = zeros(size(X, 1), 1);
+    J = zeros(size(X, 1), 1);
+    e = zeros(size(X, 1), 1);
+    
+    X_col_vec = zeros(M,1);
+    
+    %step through sample i in the time series
+    for i = 1:size(X,1)
+        X_col_vec = repmat(X(i), M, 1); 
+        Y(i) = w(i,:)*X_col_vec;
+        e(i) = d(i)-Y(i);
+        J(i) = e(i)^2;
+        w(i+1,:) = w(i,:) + 2*a*e(i)*X(i);
+    end
+    
+    %sound(e,fs);
+    
+
+    for i = 1:M
+        plot(w(:,1));
+        subplot;
+        plot(w(:,2))
+    end
+        
+  
+
+end
