@@ -6,10 +6,9 @@ function project_1()
     
     %define filter order M, step size a, and initialize weights with
     %randn()
-    a = 0.0001;
+    a = 0.001;
     stepsize = 5;
     max_order = 100;
-    M= 150;
     
     erle_plot_index = [5:stepsize:max_order];
     erle = zeros(max_order/stepsize,1);
@@ -17,7 +16,7 @@ function project_1()
     w = zeros(size(X,1), max_order);
     J = zeros(size(X, 1), 1);
     
-%     for M = 5:stepsize:max_order
+    for M = 5:stepsize:max_order
         %filler = randn(1,M);
         w = zeros(size(X,1), M);
         %w(1,:) = filler;
@@ -26,8 +25,8 @@ function project_1()
         e = zeros(size(X, 1), 1);
         X_col_vec = zeros(M,1);
 
-        for times = 1:4   
-            w(1,:) = w(size(X,1),:);
+        for times = 1:4
+            
             %step through sample i in the time series
             for i = 1:size(X,1)
                 if i < M+1
@@ -43,37 +42,31 @@ function project_1()
                         X_col_vec(j) = X(i-j);
                     end
                 end
+                %X_col_vec = repmat(X(i), M, 1); 
                 Y(i) = w(i,:)*X_col_vec;
                 e(i) = d(i)-Y(i);
                 J(i) = e(i)^2;
                 w(i+1,:) = w(i,:) + (2*a*e(i)*X_col_vec).';
             end
+``
             erle(erle_counter) = 10*log10((d.'*d)/(e.'*e));
             erle_counter = erle_counter+1;
-            subplot(2,2,times);
-            
-            hold on;
-            for b = 1:M
-                plot(w(:,b));
-            end
-            hold off;
-        end
-%     end
+        end 
+    end
     
-%     subplot(2,2,3);
-%     plot(erle_plot_index, erle);
-% 
-%     %plots
-%     subplot(2,2,1);
-%     hold;
-%     for i = 1:M
-%         plot(w(:,i));
-%     end
-% 
-%     subplot(2,2,2);
-%     plot(J);
-      sound(e);
+    subplot(2,2,3);
+    plot(erle_plot_index, erle);
 
+    %plots
+    subplot(2,2,1);
+    hold;
+    for i = 1:M
+        plot(w(:,i));
+    end
+
+    subplot(2,2,2);
+    plot(J);
+% 
 %     subplot(2,2,1)
 %     plot(d, 'green');
 %     hold;
