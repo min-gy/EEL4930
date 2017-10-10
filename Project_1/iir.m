@@ -37,6 +37,10 @@ function iir ()
         %Choosing fixed order to see different u values
         if M == fixed_order_for_u
             for uu = .1:.1:.9
+                e = zeros(size(X, 1), 1);
+                X_k = padarray(X.', [max_order-1,0], 0, 'post');
+                w = zeros(size(X,1), max_order);
+                
                 for i = 1:size(X,1)
                     if i > 1
                         for k = 2:M
