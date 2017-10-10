@@ -1,14 +1,11 @@
 function project_1()
-
     d = dlmread('corrupted_speech.txt');
     fs = dlmread('fs.txt');
     X = dlmread('music.txt');
     
-    %define filter order M, step size a, and initialize weights with
-    %randn()
-    a = 0.001;
+    a = 0.0001;
     stepsize = 5;
-    max_order = 100;
+    max_order = 250;
     
     erle_plot_index = [5:stepsize:max_order];
     erle = zeros(max_order/stepsize,1);
@@ -17,16 +14,14 @@ function project_1()
     J = zeros(size(X, 1), 1);
     
     for M = 5:stepsize:max_order
-        %filler = randn(1,M);
         w = zeros(size(X,1), M);
-        %w(1,:) = filler;
         Y = zeros(size(X, 1), 1);
         J = zeros(size(X, 1), 1);
         e = zeros(size(X, 1), 1);
         X_col_vec = zeros(M,1);
 
-        for times = 1:4
-            
+%         for times = 1:4   
+            w(1,:) = w(size(X,1),:);
             %step through sample i in the time series
             for i = 1:size(X,1)
                 if i < M+1
@@ -42,20 +37,27 @@ function project_1()
                         X_col_vec(j) = X(i-j);
                     end
                 end
-                %X_col_vec = repmat(X(i), M, 1); 
                 Y(i) = w(i,:)*X_col_vec;
                 e(i) = d(i)-Y(i);
                 J(i) = e(i)^2;
                 w(i+1,:) = w(i,:) + (2*a*e(i)*X_col_vec).';
             end
-``
             erle(erle_counter) = 10*log10((d.'*d)/(e.'*e));
             erle_counter = erle_counter+1;
-        end 
+            
+%             hold on;
+%             for b = 1:M
+%                 plot(w(:,b));
+%             end
+%             hold off;
+%         end
     end
     
     subplot(2,2,3);
     plot(erle_plot_index, erle);
+    title('ERLE Plot');
+    xlabel('Filter Order');
+    ylabel('ERLE Value');
 
     %plots
     subplot(2,2,1);
@@ -66,17 +68,6 @@ function project_1()
 
     subplot(2,2,2);
     plot(J);
-% 
-%     subplot(2,2,1)
-%     plot(d, 'green');
-%     hold;
-%     plot(e, 'red');
-%     legend('music+voice','error');
-%    
-%     subplot(2,2,3);
-%     plot(d, 'green');
-%     hold;
-%     plot(X, 'black');
-%     legend('music+voice','music');
+    sound(e);
 
 end

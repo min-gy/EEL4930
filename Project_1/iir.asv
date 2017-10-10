@@ -3,91 +3,104 @@ function iir ()
     d = dlmread('corrupted_speech.txt');
     fs = dlmread('fs.txt');
     X = dlmread('music.txt');
-    X_k = padarray(X, [size(X,1)-1,0], 0, 'post')
     
     %define filter order M, step size a, and initialize weights with
     %randn()
-    a = 0.0001;
-    u = 2;
-    1_minus_u = 1-u;
-%     stepsize = 5;
-%     max_order = 100;
-    M = 150;
-%     
-%     erle_plot_index = [5:stepsize:max_order];
-%     erle = zeros(max_order/stepsize,1);
-%     erle_counter = 1;
+    a = 0.01;
+    u = .2;
+    one_minus_u = 1-u;
+    min_order = 5;
+    stepsize = 5;
+    max_order = 100;
+    fixed_order_for_u = 30;
+
+    X_k = padarray(X.', [max_order-1,0], 0, 'post');
     
-%     for M = 5:stepsize:max_order
-        %filler = randn(1,M);
-        w = zeros(size(X,1), M);
-        %w(1,:) = filler;
-        Y = zeros(size(X, 1), 1);
-        J = zeros(size(X, 1), 1);
-        e = zeros(size(X, 1), 1);
-        %X_col_vec = zeros(M,1);
-        i_index = 0;
-        k_index = 0;
-  
+    erle_plot_index = [min_order:stepsize:max_order];
+    erle = zeros(max_order/stepsize,1);
+    erle_counter = 1;
+    w = zeros(size(X,1), max_order);
+    Y = zeros(size(X, 1), 1);
+    J = zeros(size(X, 1), 1);
+    e = zeros(size(X, 1), 1);
+    
+    erle_u_plot_index = [.1:.1:.9];
+    erle_u = zeros(length(erle_u_plot_index),1);
+    erle_u_counter = 1;
+
+    for M = min_order:stepsize:max_order
         %step through sample i in the time series
-        for i = 2:size(X,1)
-            for k = 2:M
-                X_k(k,i) = 1_minus_u*X_k(k,i-1)+ u*X-k(k-1,i-1);
-%             if i < M+1
-%                 X_col_vec = zeros(M, 1);
-%                 j = 0;
-%                 if i>1
-%                     for j = 1:i-1
-%                         X_col_vec(j) = X(i-j);
-%                     end
-%                 end
-%             else
-%                 for k = 1:M
-%                     X_col_vec(j) = X(i-j);
-%                 end
-%             end
-            Y(i) = w(i,:)*X_col_vec;
+        e = zeros(size(X, 1), 1);
+        X_k = padarray(X.', [max_order-1,0], 0, 'post');
+        w = zeros(size(X,1), max_order);
+        
+        %Choosing fixed order to see different u values
+        if M == fixed_order_for_u
+            for uu = .1:.1:.9
+                for i = 1:size(X,1)
+                    if i > 1
+                        for k = 2:M
+                            X_k(k,i) = (1-uu)*X_k(k,i-1)+ uu*X_k(k-1,i-1);
+                        end
+                    end
+                    Y(i) = w(i,:)*X_k(:,i);
+                    e(i) = d(i)-Y(i);
+                    J(i) = e(i)^2;
+                    w(i+1,:) = w(i,:) + (2*a*e(i)*X_k(:,i)).';
+                end
+                temp = 10*log10((d.'*d)/(e.'*e));
+                erle_u(erle_u_counter) = temp;
+                erle_u_counter = erle_u_counter+1;
+            end
+            subplot(2,2,4);
+            plot(erle_u_plot_index,erle_u);
+            title('Fixed Filter Order of 30 with Varied u');
+        end
+        
+        %clear
+        e = zeros(size(X, 1), 1);
+        X_k = padarray(X.', [max_order-1,0], 0, 'post');
+        w = zeros(size(X,1), max_order);
+        
+        %actual main loop
+        for i = 1:size(X,1)
+            if i > 1
+                for k = 2:M
+                    X_k(k,i) = (1-u)*X_k(k,i-1)+ u*X_k(k-1,i-1);
+                end
+            end
+            Y(i) = w(i,:)*X_k(:,i);
             e(i) = d(i)-Y(i);
             J(i) = e(i)^2;
-            %DOOOOOOOOOOOOOOOOO!!!!
-            w(i+1,:) = w(i,:) + (2*a*e(i)*X_col_vec).';
+            w(i+1,:) = w(i,:) + (2*a*e(i)*X_k(:,i)).';
         end
-        erle(erle_counter) = 10*log10((d.'*d)/(e.'*e));
+        temp = 10*log10((d.'*d)/(e.'*e));
+        erle(erle_counter) = temp;
         erle_counter = erle_counter+1;
-        subplot(2,2,times);
+    end
+        
+    %plots
+    subplot(2,2,1);
+    hold;
+    for i = 1:max_order
+        plot(w(:,i));
+    end
+    title('Weight Tracks Across Sample');
+    xlabel('Audio Sample as a Time Series');
+    ylabel('Weight Values');
 
-        hold on;
-        for b = 1:M
-            plot(w(:,b));
-        end
-        hold off;
+    subplot(2,2,2);
+    plot(J);
+    title('Learning Curve');
+    xlabel('Audio Sample as a Time Series');
+    ylabel('Error^2');
 
-%     end
+    subplot(2,2,3)
+    plot(erle_plot_index, erle);
+    title('ERLE Plot');
+    xlabel('Filter Order');
+    ylabel('ERLE Value');
     
-%     subplot(2,2,3);
-%     plot(erle_plot_index, erle);
-% 
-%     %plots
-%     subplot(2,2,1);
-%     hold;
-%     for i = 1:M
-%         plot(w(:,i));
-%     end
-% 
-%     subplot(2,2,2);
-%     plot(J);
-      sound(e);
-
-%     subplot(2,2,1)
-%     plot(d, 'green');
-%     hold;
-%     plot(e, 'red');
-%     legend('music+voice','error');
-%    
-%     subplot(2,2,3);
-%     plot(d, 'green');
-%     hold;
-%     plot(X, 'black');
-%     legend('music+voice','music');
-
+    %play sound
+    sound(e,fs);
 end
